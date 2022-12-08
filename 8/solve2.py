@@ -2,63 +2,15 @@
 
 import numpy as np
 
-def get_score(array, idx, jdx):
-    height = array[idx, jdx]
-    score = 1
+def get_score(array_slice, height):
+    idx = 0
+
+    for idx, element in enumerate(array_slice, start=1):
+        if element >= height:
+            break
     
-    row = idx - 1
-    length = 0
+    return idx
 
-    while row >= 0:
-        length += 1
-
-        if array[row, jdx] >= height:
-            break
-        
-        row -= 1
-
-    score *= length
-
-    row = idx + 1
-    length = 0
-
-    while row < array.shape[0]:
-        length += 1
- 
-        if array[row, jdx] >= height:
-            break
-        
-        row += 1
-
-    score *= length
-
-    col = jdx - 1
-    length = 0
-
-    while col >= 0:
-        length += 1
-
-        if array[idx, col] >= height:
-            break
- 
-        col -= 1
-
-    score *= length
-
-    col = jdx + 1
-    length = 0
-
-    while col < array.shape[1]:
-        length += 1
-
-        if array[idx, col] >= height:
-            break
-
-        col += 1
-
-    score *= length
-
-    return score
 
 with open("input.txt") as f_in:
     array = np.asarray([list(line.strip()) for line in f_in], dtype=int)
@@ -67,6 +19,9 @@ with open("input.txt") as f_in:
     for idx in range(array.shape[0]):
         for jdx in range(array.shape[1]):
             
-            scores[idx, jdx] = get_score(array, idx, jdx) 
+            scores[idx, jdx] = get_score(array[idx, :jdx][::-1], array[idx, jdx]) * \
+                               get_score(array[idx, jdx+1:], array[idx, jdx]) * \
+                               get_score(array[:idx, jdx][::-1], array[idx, jdx]) * \
+                               get_score(array[idx+1:, jdx], array[idx, jdx])
 
     print(scores.max())
