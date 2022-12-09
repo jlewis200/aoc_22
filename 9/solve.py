@@ -1,26 +1,26 @@
 #!/usr/bin/python3
 
+from math import copysign
+
+
 class Node(object):
 
     x_min = 0
-    x_max = 0
-    y_min = 0
+    x_max = 5
+    y_min = -4
     y_max = 0
 
     def __init__(self, label):
         self.label = label
-        self.parent = None
         self.x = 0
         self.y = 0
-        self.x_min = 0
-        self.x_max = 0
-        self.y_min = 0
-        self.y_max = 0
+        self.parent = None
         self.child = None
         self.positions = set()
 
     def move(self, direction):
-
+        
+        #move the head node
         if direction == "U":
             self.y -= 1
 
@@ -33,42 +33,59 @@ class Node(object):
         elif direction == "R":
             self.x += 1
 
+        #update the child nodes recursively
         self.child.update()
-        
+       
+        #update the mins/maxs
         Node.x_min = min(self.x, Node.x_min)
         Node.x_max = max(self.x, Node.x_max)
         Node.y_min = min(self.y, Node.y_min)
         Node.y_max = max(self.y, Node.y_max)
 
     def update(self):
+        h_move = False
+        v_move = False
 
-        if abs(self.x - self.parent.x) >= 2:
-            self.y = self.parent.y
+        #if manhattan distance between parent/child >= 3, this indicates a diagonal move is required
+        if abs(self.x - self.parent.x) + abs(self.y - self.parent.y) >= 3:
+            h_move = True
+            v_move = True
 
-        elif abs(self.y - self.parent.y) >= 2:
-            self.x = self.parent.x
-       
-        if self.x == self.parent.x:
-            self.y += int((self.parent.y - self.y) / 2) #round towards zero
+        #a horizontal diff of 2 indicates a horizontal move is required
+        elif abs(self.x - self.parent.x) == 2:
+            h_move = True
 
-        elif self.y == self.parent.y:
-            self.x += int((self.parent.x - self.x) / 2) #round towards zero
+        #a vertical diff of 2 indicates a vertical move is required
+        elif abs(self.y - self.parent.y) == 2:
+            v_move = True
+        
+        #vertical move
+        if v_move:
+            #move 1 unit in the required vertical direction
+            self.y += copysign(1, self.parent.y - self.y)
 
+        #horizontal move
+        if h_move:
+            #move 1 unit in the required horizontal direction
+            self.x += copysign(1, self.parent.x - self.x)
+
+        #add new coordinates to the positions set
         self.positions.add((self.y, self.x))
 
+        #update the child nodes recursively
         if self.child is not None:
             self.child.update()
 
-    def print_position(self):
-        print(f"{self.y} {self.x}") 
-
     def get_label(self, y, x):
+        #parent nodes take priority over children, return first label in any grid location
         if self.y == y and self.x == x:
             return self.label
 
+        #if no node occupies the position, return a "."
         if self.child is None:
             return "."
 
+        #recurse
         return self.child.get_label(y, x)
 
     def print_board(self):
@@ -106,9 +123,6 @@ def solve(length, filename, debug=True):
     head = nodes[0]
     tail = nodes[-1]
 
-    Node.y_min = -4
-    Node.x_max = 5
-
     with open(filename) as f_in:
         for direction, steps in map(str.split, f_in):
 
@@ -129,7 +143,7 @@ def solve(length, filename, debug=True):
 
 if __name__ == "__main__":
     solve(2, "test_input.txt", True)
-#    solve(10, "test_input.txt", True)
+    solve(10, "test_input.txt", True)
 
-    #solve(2, "input.txt", False)
-    #solve(10, "input.txt", True)
+    solve(2, "input.txt", False)
+    solve(10, "input.txt", False)
