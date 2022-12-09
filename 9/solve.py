@@ -35,7 +35,7 @@ class Node(object):
 
         #update the child nodes recursively
         self.child.update()
-       
+
         #update the mins/maxs
         Node.x_min = min(self.x, Node.x_min)
         Node.x_max = max(self.x, Node.x_max)
