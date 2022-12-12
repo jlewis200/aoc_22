@@ -1,59 +1,73 @@
 #!/usr/bin/python3                                                                                                       
-                                                                                                                         
-import numpy as np                                                                                                       
-from code import interact                                                                                                
-                                                                                                                         
-with open("input.txt") as f_in:                                                                                     
-    array = []                                                                                                           
-                                                                                                                         
-    for line in map(str.strip, f_in):                                                                                    
-        line = map(lambda x: ord(x), line)                                                                               
-        array.append(list(line))                                                                                         
-                                                                                                                         
-    array = np.asarray(array)                                                                                            
-                                                                                                                         
-    start = np.nonzero(array == ord("S"))                                                                                
-    end = np.nonzero(array == ord('E'))                                                                                  
-                                                                                                                         
-    #replace start/end with "a"/"z"                                                                                      
-    array[start] = ord("a")                                                                                              
-    array[end] = ord("z")                                                                                                
-                                                                                                                         
-    start = (start[1] + (start[0] * array.shape[1]))[0]                                                                  
-    end = (end[1] + (end[0] * array.shape[1]))[0]                                                                        
-                                                                                                                         
-    adjacencies = [[] for _ in range(array.size)]                                                                        
-    dist = [np.inf for _ in range(array.size)]                                                                           
-    dist[start] = 0                                                                                                                     
-                                                                                                                         
-    for idx in range(array.shape[0]):                                                                                    
-        for jdx in range(array.shape[1]):                                                                                
-            src = jdx + (idx * array.shape[1])                                                                           
-                                                                                                                         
-            idx_prime = idx - 1                                                                                          
-                                                                                                                         
-            for y, x in [(idx - 1, jdx), (idx + 1, jdx), (idx, jdx - 1), (idx, jdx + 1)]:                                
-                                                                                                                         
-                if y >= 0 and x >= 0 and y < array.shape[0] and x < array.shape[1] and array[y, x] - array[idx, jdx] <= 1:
-                    dst = x + (y * array.shape[1])                                                                       
-                                                                                                                         
-                    adjacencies[src].append(dst)                                                                         
-                                                                                                                         
-                                                                                                                         
-    src = start                                                                                                          
-    queue = [start]                                                                                                      
-                                                                                                                         
-    while src != end:                                                                                                    
-        src = queue.pop(0)                                                                                               
-                                                                                                                         
-        for dst in adjacencies[src]:                                                                                     
-                                                                                                                         
-            if dist[dst] == np.inf:                                                                                      
-                dist[dst] = dist[src] + 1                                                                                
-                queue.append(dst)                                                                                        
-                                                                                                                         
-    print(dist[end])                                                                                                     
-                                                                                                                         
-                                                                                                                         
-                                                                                                                         
-    interact(local=locals())  
+
+import numpy as np
+
+
+INF = 2**32
+
+
+with open("input.txt") as f_in:
+    array = []
+
+    for line in map(str.strip, f_in):
+        line = map(lambda x: ord(x), line)
+        array.append(list(line))
+
+    array = np.asarray(array)
+
+    #get indices of start/end
+    start = np.nonzero(array == ord("S"))
+    end = np.nonzero(array == ord('E'))
+
+    #replace start/end with "a"/"z"
+    array[start] = ord("a")
+    array[end] = ord("z")
+
+    #get flattened indices
+    start = np.ravel_multi_index(start, array.shape)[0]
+    end = np.ravel_multi_index(end, array.shape)[0]
+
+    #BFS can provide a single source all dest shortest unweighted path
+    #BFS starting from end to find shortest path to all other vertices
+    dist = np.full(array.size, INF, dtype=int)
+    dist[end] = 0
+
+    #build the graph adjacency list
+    adjacencies = [[] for _ in range(array.size)]
+
+    for idx in range(array.shape[0]):
+        for jdx in range(array.shape[1]):
+            #get flat index
+            src = np.ravel_multi_index((idx, jdx), array.shape)
+
+            for mdx, ndx in [(idx - 1, jdx), (idx + 1, jdx), (idx, jdx - 1), (idx, jdx + 1)]:
+                
+                #if y, x in proper range
+                if mdx >= 0 and \
+                   ndx >= 0 and \
+                   mdx < array.shape[0] and \
+                   ndx < array.shape[1] and \
+                   array[mdx, ndx] - array[idx, jdx] >= -1:
+                    
+                    #add adjacency
+                    dst = np.ravel_multi_index((mdx, ndx), array.shape)
+                    adjacencies[src].append(dst)
+
+    #BFS
+    queue = [end]                                                                                                      
+
+    while len(queue) > 0:
+        src = queue.pop(0)
+
+        for dst in adjacencies[src]:
+
+            #if unvisited, update dist and add to queue
+            if dist[dst] == INF:
+                dist[dst] = dist[src] + 1
+                queue.append(dst)
+
+    #get dist to start
+    print(dist[start])                                                                                                     
+
+    #get smallest dist to an 'a' vertex
+    print(dist[array.flatten() == ord('a')].min())
