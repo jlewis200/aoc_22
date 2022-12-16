@@ -57,8 +57,45 @@ def solve(filename):
         
         #all pair shortest path:  dist[src, dst]
         dist = get_all_pair(vertices)
+        rewards = get_rewards(vertices)
+
+        max_reward = recurse(0, 0, rewards, dist, 30)
+        print(max_reward)
+
+
+def recurse(pos, step, rewards, dist, n_steps=30):
+    reward = 0
+    max_reward = 0
+
+    #get the future rewards for opening a valve given the current position
+    future_rewards = rewards * (n_steps - step - dist[pos] - 1)
+
+    #choose a move
+    #use the highest reward first, then 2nd highest, etc...
+    for pos_prime in future_rewards.argsort()[::-1]:
+        step_prime = step + (dist[pos, pos_prime] + 1)
         
-        interact(local=locals())
+        #skip if the reward is 0 or the step count exceeds n_steps
+        if rewards[pos_prime] == 0 or step_prime > n_steps:
+            continue
+        
+        rewards_prime = rewards.copy()
+        rewards_prime[pos_prime] = 0
+
+        reward = future_rewards[pos_prime] + recurse(pos_prime, step_prime, rewards_prime, dist)
+        max_reward = max(max_reward, reward)
+
+    print(f"{step} {max_reward}")
+    return max_reward
+
+
+def get_rewards(vertices):
+    rewards = np.zeros(Vertex.count, dtype=int)
+
+    for vertex in vertices.values():
+        rewards[vertex.index] = vertex.flow
+
+    return rewards
 
 
 def get_all_pair(vertices):
@@ -92,3 +129,4 @@ def bfs(src):
 
 if __name__ == "__main__":
     solve("test_input.txt")
+    #solve("input.txt")
