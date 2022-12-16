@@ -24,13 +24,8 @@ def solve(filename):
 
     with open(filename) as f_in:
         vertices = {}
-        vertices_list = []
-        root = None
 
-        lines = [line for line in f_in]
-        #parse the src valve first to keep indexes in a sensible order
-
-        for line in lines:
+        for line in f_in:
             flow = int(re.findall(r"\d+", line)[0])
             labels = re.findall(r"[A-Z]{2}", line)
 
@@ -38,14 +33,10 @@ def solve(filename):
             for label in labels:
                 if label not in vertices:
                     vertices[label] = Vertex(label)
-                    vertices_list.append(vertices[label])
             
             #set flow
             src = vertices[labels.pop(0)]
             src.flow = flow
-
-            if root is None:
-                root = src
 
             #link vertices
             for dst in map(lambda label: vertices[label], labels):
@@ -55,12 +46,12 @@ def solve(filename):
         dist = get_all_pair(vertices)
         rewards = get_rewards(vertices)
 
-        max_reward = recurse(vertices["AA"].index, 30, rewards, dist)
+        max_reward = get_max_reward(vertices["AA"].index, 30, rewards, dist)
         
         print(max_reward)
 
 
-def recurse(pos, rem_step, rewards, dist):
+def get_max_reward(pos, rem_step, rewards, dist):
     max_reward = 0
 
     for pos_prime in range(rewards.shape[0]):
@@ -80,7 +71,7 @@ def recurse(pos, rem_step, rewards, dist):
         rewards[pos_prime] = 0
         
         #get the reward of taking this step and then the maximum subsequent reward
-        reward = future_reward + recurse(pos_prime, rem_step_prime, rewards, dist)
+        reward = future_reward + get_max_reward(pos_prime, rem_step_prime, rewards, dist)
 
         #restore the reward of pos_prime
         rewards[pos_prime] = saved_reward
@@ -129,4 +120,4 @@ def bfs(src):
 
 if __name__ == "__main__":
     solve("test_input.txt")
-    solve("input.txt")
+    #solve("input.txt")
