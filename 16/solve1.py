@@ -63,9 +63,21 @@ def solve(filename):
         print(max_reward)
 
 
-def recurse(pos, step, rewards, dist, n_steps=30):
+def recurse(pos, step, rewards, dist, n_steps=30, a_max=None, a_argmax=None):
+    if a_max is None or a_argmax is None:
+        #track the max future payoff given [step, pos]
+        a_max = np.full((n_steps, rewards.shape[0]), -1)
+        
+        #track the action which maximizes future payoff given [step, pos]
+        a_argmax = np.full((n_steps, rewards.shape[0]), -1)
+        a_argmax
+
     reward = 0
     max_reward = 0
+    argmax_reward = 0
+
+    if a_max[step, pos] != -1:
+        return a_max[step, pos]
 
     #get the future rewards for opening a valve given the current position
     future_rewards = rewards * (n_steps - step - dist[pos] - 1)
@@ -76,15 +88,19 @@ def recurse(pos, step, rewards, dist, n_steps=30):
         step_prime = step + (dist[pos, pos_prime] + 1)
         
         #skip if the reward is 0 or the step count exceeds n_steps
-        if rewards[pos_prime] == 0 or step_prime > n_steps:
+        if rewards[pos_prime] == 0 or step_prime >= n_steps:
             continue
         
         rewards_prime = rewards.copy()
         rewards_prime[pos_prime] = 0
 
         reward = future_rewards[pos_prime] + recurse(pos_prime, step_prime, rewards_prime, dist)
-        max_reward = max(max_reward, reward)
 
+        if reward > max_reward:
+            max_reward = reward
+            argmax_reward = pos_prime
+
+    a_max[step, pos] = max_reward
     print(f"{step} {max_reward}")
     return max_reward
 
