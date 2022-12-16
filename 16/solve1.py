@@ -5,7 +5,7 @@ from code import interact
 
 
 INF = 2**32
-
+REWARDS_MASK = None
 
 class Vertex(object):
     count = 0
@@ -19,7 +19,7 @@ class Vertex(object):
         self.adjacencies = set()
 
 
-def solve(filename):
+def solve(filename, n_steps):
     import re
 
     with open(filename) as f_in:
@@ -58,26 +58,67 @@ def solve(filename):
         #all pair shortest path:  dist[src, dst]
         dist = get_all_pair(vertices)
         rewards = get_rewards(vertices)
+        rewards2 = get_rewards(vertices)
 
-        max_reward = recurse(0, 0, rewards, dist, 30)
-        print(max_reward)
+        #set the REWARDS_MASK
+        global REWARDS_MASK
+        REWARDS_MASK = rewards != 0
+        n_states = 2**(rewards[REWARDS_MASK]).shape[0]
 
-
-def recurse(pos, step, rewards, dist, n_steps=30, a_max=None, a_argmax=None):
-    if a_max is None or a_argmax is None:
         #track the max future payoff given [step, pos]
-        a_max = np.full((n_steps, rewards.shape[0]), -1)
+        a_max = np.full((n_steps +1, rewards.shape[0], n_states), -1)
         
         #track the action which maximizes future payoff given [step, pos]
-        a_argmax = np.full((n_steps, rewards.shape[0]), -1)
-        a_argmax
+        a_argmax = np.full((n_steps+1, rewards.shape[0], n_states), -1)
 
-    reward = 0
+        max_reward = recurse(0, 0, rewards, dist, n_steps, a_max, a_argmax)
+        print(max_reward)
+
+        step = 0
+        pos = 0
+        rewards_state = -1
+        
+        f=get_rewards_state
+
+        reward_sum = 0
+
+        while step <= 30 and rewards_state != 0:
+            rewards_state = get_rewards_state(rewards)
+            pos_prime = a_argmax[step, pos, rewards_state]
+            step += 1 + dist[pos, pos_prime]
+            reward_sum += (30 - step) * rewards[pos_prime]
+           
+            print("#"*80)
+            print(f"step: {step}")
+            print(f"pos: {pos}")
+            print(f"rewards_state: {rewards_state}")
+            print(f"pos_prime: {pos_prime}")
+            print(f"pos_prime: {chr(ord('A') + pos_prime)}")
+            print(f"reward_sum: {reward_sum}")
+            print()
+            
+            pos = pos_prime
+            rewards[pos] = 0
+        
+        interact(local=locals())
+
+def get_boolean(array):
+    res = 0
+    for exponent, value in enumerate((array != 0)[::-1]):
+        res += value * (2**exponent)
+    return res
+
+def get_rewards_state(rewards):
+    return get_boolean(rewards[REWARDS_MASK])
+
+def recurse(pos, step, rewards, dist, n_steps, a_max, a_argmax):
     max_reward = 0
     argmax_reward = 0
+    rewards_state = get_rewards_state(rewards)
 
-    if a_max[step, pos] != -1:
-        return a_max[step, pos]
+    #memoized result
+#    if a_max[step, pos, rewards_state] != -1:
+#        return a_max[step, pos, rewards_state]
 
     #get the future rewards for opening a valve given the current position
     future_rewards = rewards * (n_steps - step - dist[pos] - 1)
@@ -90,17 +131,31 @@ def recurse(pos, step, rewards, dist, n_steps=30, a_max=None, a_argmax=None):
         #skip if the reward is 0 or the step count exceeds n_steps
         if rewards[pos_prime] == 0 or step_prime >= n_steps:
             continue
-        
-        rewards_prime = rewards.copy()
-        rewards_prime[pos_prime] = 0
+       
+        #save the reward of pos_prime for later restoration
+        saved_reward = rewards[pos_prime]
 
-        reward = future_rewards[pos_prime] + recurse(pos_prime, step_prime, rewards_prime, dist)
+        #set the reward to 0 to prevent from future use (valve can only be turned on once)
+        rewards[pos_prime] = 0
+
+        reward = future_rewards[pos_prime] + recurse(pos_prime,
+                                                     step_prime,
+                                                     rewards,
+                                                     dist,
+                                                     n_steps,
+                                                     a_max,
+                                                     a_argmax)
+
+        #restore the reward of pos_prime
+        rewards[pos_prime] = saved_reward
 
         if reward > max_reward:
             max_reward = reward
             argmax_reward = pos_prime
 
-    a_max[step, pos] = max_reward
+    a_max[step, pos, rewards_state] = max_reward
+    a_argmax[step, pos, rewards_state] = argmax_reward
+    
     print(f"{step} {max_reward}")
     return max_reward
 
@@ -115,7 +170,6 @@ def get_rewards(vertices):
 
 
 def get_all_pair(vertices):
-
     dist = np.full((Vertex.count, Vertex.count), INF, dtype=int)
     
     for src in vertices.values():
@@ -144,5 +198,5 @@ def bfs(src):
     return dist
 
 if __name__ == "__main__":
-    solve("test_input.txt")
-    #solve("input.txt")
+    #solve("test_input.txt", 30)
+    solve("input.txt", 30)
