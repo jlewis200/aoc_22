@@ -55,7 +55,7 @@ class Data(object):
     def hash(self, steps):
         #get the hash of the data, this will represent the state for memoization
         #the coefficients form a base-256 number system
-        #if larget values are possible, the base should be increased to avoid collision
+        #if larger values are possible, the base should be increased to avoid collision
 
         state = (Data.coefficients[0] * min(self.o, self.o_max)) + \
                 (Data.coefficients[1] * min(self.c, self.c_max)) + \
