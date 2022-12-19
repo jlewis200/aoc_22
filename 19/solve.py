@@ -93,7 +93,7 @@ def solve(filename):
         
         #part 2
         print("#"*80)
-        print("part 1")
+        print("part 2")
         
         qual_prod = 1
        
