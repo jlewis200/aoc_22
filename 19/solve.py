@@ -3,6 +3,15 @@
 import re
 from code import interact
 
+o_cost = 0
+c_cost = 0
+b_cost = 0
+g_cost = 0
+o_max = 0
+c_max = 0
+b_max = 0
+g_max = 0
+
 def solve(filename):
 
     with open(filename) as f_in:
@@ -11,23 +20,42 @@ def solve(filename):
         for line in f_in:
             blueprints.append(list(map(int, re.findall(r"\d+", line))))
 
+
+        #part 1
         qual_sum = 0
 
         for blueprint in blueprints:
             print(f"blueprint:  {blueprint}")
-            qual_sum += blueprint[0] * max_geodes(blueprint)
+            qual_sum += blueprint[0] * max_geodes(blueprint, 24)
 
             print(f"qual_sum:  {qual_sum}")
         #interact(local=locals())
 
+        #part 2
+        qual_prod = 1
+        
+        for blueprint in blueprints[:3]:
+            print(f"blueprint:  {blueprint}")
+            qual_prod *= max_geodes(blueprint, 32)
 
-def max_geodes(blueprint):
+            print(f"qual_prod:  {qual_prod}")
+        #interact(local=locals())
+
+
+
+def max_geodes(blueprint, steps):
+    global o_cost, c_cost, b_cost, g_cost, o_max, c_max, b_max, g_max
+
     o_cost = blueprint[1]
     c_cost = blueprint[2]
     b_cost = blueprint[3:5]
     g_cost = blueprint[5:]
-    
-    o_bots = 1
+   
+    o_max = 3 + max(o_cost, c_cost, b_cost[0], g_cost[0])
+    c_max = 3 + b_cost[1]
+    b_max = 3 + g_cost[1]
+
+    o_bots = 1 
     c_bots = 0
     b_bots = 0
     g_bots = 0
@@ -39,18 +67,18 @@ def max_geodes(blueprint):
 
     state_dict = {}
 
-    return recurse(24, state_dict, o, c, b, g, o_bots, c_bots, b_bots, g_bots, o_cost, c_cost, b_cost, g_cost)
+    return recurse(steps, state_dict, o, c, b, g, o_bots, c_bots, b_bots, g_bots)
 
 
-def recurse(steps, state_dict, o, c, b, g, o_bots, c_bots, b_bots, g_bots, o_cost, c_cost, b_cost, g_cost):
+def recurse(steps, state_dict, o, c, b, g, o_bots, c_bots, b_bots, g_bots):
     if steps <= 0:
         return g
 
     base = 10000
 
-    state = (min(o, 21) * base**0) + \
-            (min(c, 21) * base**1) + \
-            (min(b, 21) * base**2) + \
+    state = (min(o, o_max) * base**0) + \
+            (min(c, c_max) * base**1) + \
+            (min(b, b_max) * base**2) + \
             (min(g, 21) * base**3) + \
             (o_bots * base**5) + \
             (c_bots * base**6) + \
@@ -98,7 +126,7 @@ def recurse(steps, state_dict, o, c, b, g, o_bots, c_bots, b_bots, g_bots, o_cos
         
         if o_ >= 0 and c_ >= 0 and b_ >= 0:
             g_max = max(g_max, 
-                        recurse(steps - 1, state_dict, o_, c_, b_, g_, o_bots_, c_bots_, b_bots_, g_bots_, o_cost, c_cost, b_cost, g_cost))
+                        recurse(steps - 1, state_dict, o_, c_, b_, g_, o_bots_, c_bots_, b_bots_, g_bots_))
 
     state_dict[state] = g_max
 
