@@ -33,21 +33,24 @@ def solve(filename, cube_size):
         print_board(path)
 
         cube = get_cube(board, cube_size)
-
-        roll_f, roll_b, roll_r, roll_l = get_rolls()
-
-        for _ in range(4):
-            print('#' * 80)
-            print_board(cube[0, 1:-1, 1:-1])
-            cube = roll_f(cube)
-
-        for _ in range(4):
-            print('#' * 80)
-            print_board(cube[0, 1:-1, 1:-1])
-            cube = roll_l(cube)
-
+        
+        print_cube(cube)
 
         interact(local=locals())
+
+def print_cube(cube):
+    roll_f, roll_b, roll_r, roll_l = get_rolls()
+
+    for _ in range(4):
+        print('#' * 80)
+        print_board(cube[0, 1:-1, 1:-1])
+        cube = roll_f(cube)
+
+    for _ in range(4):
+        print('#' * 80)
+        print_board(cube[0, 1:-1, 1:-1])
+        cube = roll_l(cube)
+
 
 
 def get_cube(board, cube_size):
